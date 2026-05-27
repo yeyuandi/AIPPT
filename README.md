@@ -4,6 +4,8 @@
 
 将 Word / 文本 / Markdown 文档经大模型生成 **HTML 幻灯片**，再对 **`.slide`** 区域截图并导出为 **PPTX**。提供 **CLI 一条龙** 与可选 **Web 六步向导**。
 
+![aippt Web 向导界面](docs/image/index.png)
+
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![LangChain](https://img.shields.io/badge/LangChain-1.3%2B-green)](https://github.com/langchain-ai/langchain)
 [![Playwright](https://img.shields.io/badge/Playwright-Chromium-orange)](https://playwright.dev/python/)
@@ -80,7 +82,7 @@ flowchart LR
 ## Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/aippt.git
+git clone https://github.com/yeyuandi/aippt.git
 cd aippt
 
 python -m venv .venv
@@ -223,8 +225,6 @@ pytest tests/unit
 ## License
 
 本项目采用 **[MIT License](LICENSE)**（Copyright © 2026 aippt contributors）。
-
-若你希望署名改为个人或组织名称，可直接编辑 `LICENSE` 第一行版权行。
 
 ---
 
