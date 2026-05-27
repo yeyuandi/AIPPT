@@ -48,7 +48,7 @@ pip install python-docx
 
 ### 如何切换模型？
 
-编辑 `.env` 中 `OLLAMA_MODEL` 或 `DEEPSEEK_MODEL`，或在 Web 向导「模型配置」中保存（写入 `.env`）。
+编辑 `.env` 中 `OLLAMA_MODEL` 或 `DEEPSEEK_MODEL`；Web 向导仅在任务上传时选择 LLM 后端，不再写入 `.env`。
 
 ---
 

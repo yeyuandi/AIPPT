@@ -18,9 +18,7 @@ from pydantic import ValidationError
 
 from aippt.services import deck_jobs as wf
 from aippt.chains import DECK_TEMPLATE_HTML_FILENAME
-from aippt.config import REPO_ROOT, provider_auth_error_message, reload_llm_settings
 from aippt.domain import DeckOutline
-from aippt.settings import LLM_ENV_KEYS, read_llm_settings, write_llm_settings
 
 bp = Blueprint("wizard", __name__)
 
@@ -34,70 +32,6 @@ def _json_err(message: str, code: int = 400):
 def index():
     """向导主页。"""
     return render_template("wizard.html")
-
-
-@bp.get("/api/settings/llm")
-def api_get_llm_settings():
-    """读取 ``.env`` 中的 LLM 配置（供页面右上角「模型配置」）。"""
-    try:
-        settings = read_llm_settings()
-    except OSError as err:
-        current_app.logger.exception("读取 LLM 配置失败")
-        return _json_err(f"无法读取 .env：{err}", 500)
-    auth_err = provider_auth_error_message()
-    return jsonify(
-        settings=settings,
-        env_path=str(REPO_ROOT / ".env"),
-        auth_ok=auth_err is None,
-        auth_message=auth_err,
-    )
-
-
-@bp.put("/api/settings/llm")
-def api_put_llm_settings():
-    """写入 ``.env`` 并刷新进程内 LLM 配置。"""
-    payload = request.get_json(silent=True) or {}
-    if not isinstance(payload, dict):
-        return _json_err("请求体须为 JSON 对象")
-
-    updates: dict[str, str] = {}
-    for key in LLM_ENV_KEYS:
-        if key not in payload:
-            continue
-        val = payload[key]
-        if val is None:
-            updates[key] = ""
-        else:
-            updates[key] = str(val).strip()
-
-    provider = updates.get("LLM_PROVIDER") or read_llm_settings().get("LLM_PROVIDER", "")
-    if provider and provider not in ("ollama", "deepseek"):
-        return _json_err("LLM_PROVIDER 须为 ollama 或 deepseek")
-
-    if "LLM_TEMPERATURE" in updates and updates["LLM_TEMPERATURE"]:
-        try:
-            t = float(updates["LLM_TEMPERATURE"])
-        except ValueError:
-            return _json_err("LLM_TEMPERATURE 须为数字")
-        if not 0 <= t <= 2:
-            return _json_err("LLM_TEMPERATURE 建议在 0～2 之间")
-        updates["OLLAMA_TEMPERATURE"] = updates["LLM_TEMPERATURE"]
-
-    try:
-        path = write_llm_settings(updates)
-        reload_llm_settings()
-    except OSError as err:
-        current_app.logger.exception("写入 LLM 配置失败")
-        return _json_err(f"无法写入 .env：{err}", 500)
-
-    auth_err = provider_auth_error_message()
-    return jsonify(
-        ok=True,
-        env_path=str(path),
-        settings=read_llm_settings(),
-        auth_ok=auth_err is None,
-        auth_message=auth_err,
-    )
 
 
 @bp.post("/api/jobs")

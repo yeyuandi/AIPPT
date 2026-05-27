@@ -30,16 +30,6 @@
           <p class="wizard-brand mb-1">Neural Deck Pipeline</p>
           <h1 class="wizard-title h3 mb-0">PPTAgent演示文档智能体</h1>
         </div>
-        <button
-          type="button"
-          id="btn-llm-settings"
-          class="btn btn-wiz-outline btn-sm text-nowrap"
-          data-bs-toggle="modal"
-          data-bs-target="#llm-settings-modal"
-          aria-label="打开模型参数配置"
-        >
-          <i class="bi bi-sliders" aria-hidden="true"></i> 模型配置
-        </button>
       </div>
     </header>
 
@@ -574,109 +564,6 @@
             <button type="button" class="btn btn-wiz-outline d-none" id="template-modal-btn-close">关闭</button>
             <button type="button" class="btn btn-wiz-primary d-none" id="template-modal-btn-retry">再次设计</button>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 模型参数配置（写入仓库根 .env） -->
-    <div
-      class="modal fade"
-      id="llm-settings-modal"
-      tabindex="-1"
-      aria-labelledby="llm-settings-modal-title"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content wizard-modal border-secondary border-opacity-25">
-          <div class="modal-header border-secondary border-opacity-25">
-            <h2 class="modal-title h5" id="llm-settings-modal-title">模型参数配置</h2>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="关闭"></button>
-          </div>
-          <form id="form-llm-settings">
-            <div class="modal-body">
-              <p class="small text-secondary mb-3">
-                配置保存在 <code id="llm-settings-env-path">.env</code>；保存后立即生效于本服务进程。
-              </p>
-              <div id="llm-settings-auth-hint" class="alert alert-warning d-none small" role="status"></div>
-
-              <!-- 查看模式 -->
-              <div id="llm-settings-view">
-                <dl class="row small mb-0 llm-settings-view-dl" id="llm-settings-view-dl"></dl>
-              </div>
-
-              <!-- 编辑模式 -->
-              <div id="llm-settings-edit" class="d-none" aria-hidden="true">
-              <div class="row g-3 mb-3">
-                <div class="col-md-4">
-                  <label class="form-label" for="env-llm-provider">LLM 后端</label>
-                  <select class="form-select" id="env-llm-provider" name="LLM_PROVIDER">
-                    <option value="ollama">ollama</option>
-                    <option value="deepseek">deepseek</option>
-                  </select>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label" for="env-llm-temperature">温度</label>
-                  <input
-                    class="form-control"
-                    type="number"
-                    id="env-llm-temperature"
-                    name="LLM_TEMPERATURE"
-                    min="0"
-                    max="2"
-                    step="0.1"
-                    placeholder="0.3"
-                  />
-                </div>
-              </div>
-              <fieldset id="env-panel-ollama" class="border border-secondary border-opacity-25 rounded p-3 mb-3">
-                <legend class="float-none w-auto px-2 small text-secondary mb-0">Ollama</legend>
-                <div class="row g-3 mt-1">
-                  <div class="col-12">
-                    <label class="form-label" for="env-ollama-api-key">OLLAMA_API_KEY</label>
-                    <input class="form-control font-monospace" type="password" id="env-ollama-api-key" name="OLLAMA_API_KEY" autocomplete="off" />
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label" for="env-ollama-base-url">OLLAMA_BASE_URL</label>
-                    <input class="form-control" type="url" id="env-ollama-base-url" name="OLLAMA_BASE_URL" placeholder="https://ollama.com" />
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label" for="env-ollama-model">OLLAMA_MODEL</label>
-                    <input class="form-control" type="text" id="env-ollama-model" name="OLLAMA_MODEL" placeholder="gpt-oss:120b" />
-                  </div>
-                </div>
-              </fieldset>
-              <fieldset id="env-panel-deepseek" class="border border-secondary border-opacity-25 rounded p-3">
-                <legend class="float-none w-auto px-2 small text-secondary mb-0">DeepSeek</legend>
-                <div class="row g-3 mt-1">
-                  <div class="col-12">
-                    <label class="form-label" for="env-deepseek-api-key">DEEPSEEK_API_KEY</label>
-                    <input class="form-control font-monospace" type="password" id="env-deepseek-api-key" name="DEEPSEEK_API_KEY" autocomplete="off" />
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label" for="env-deepseek-api-base">DEEPSEEK_API_BASE</label>
-                    <input class="form-control" type="url" id="env-deepseek-api-base" name="DEEPSEEK_API_BASE" placeholder="https://api.deepseek.com/v1" />
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label" for="env-deepseek-model">DEEPSEEK_MODEL</label>
-                    <input class="form-control" type="text" id="env-deepseek-model" name="DEEPSEEK_MODEL" placeholder="deepseek-chat" />
-                  </div>
-                </div>
-              </fieldset>
-              </div>
-            </div>
-            <div class="modal-footer border-secondary border-opacity-25">
-              <div id="llm-settings-footer-view" class="d-flex w-100 justify-content-end gap-2 llm-settings-footer-actions">
-                <button type="button" class="btn btn-wiz-outline" data-bs-dismiss="modal">关闭</button>
-                <button type="button" class="btn btn-wiz-primary" id="btn-llm-settings-edit">
-                  <i class="bi bi-pencil-square" aria-hidden="true"></i> 修改
-                </button>
-              </div>
-              <div id="llm-settings-footer-edit" class="d-none w-100 justify-content-end gap-2 llm-settings-footer-actions" hidden>
-                <button type="button" class="btn btn-wiz-outline" id="btn-llm-settings-cancel-edit">取消修改</button>
-                <button type="submit" class="btn btn-wiz-primary" id="btn-llm-settings-save">保存到 .env</button>
-              </div>
-            </div>
-          </form>
         </div>
       </div>
     </div>

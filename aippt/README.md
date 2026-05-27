@@ -228,7 +228,7 @@ Flask 应用在 **`../apps/web/`**，不放在本包内。
 | 导出 | `start_export_pptx` |
 | 任务目录 | `output_run/web_jobs/<job_id>/` |
 
-Web 读写 `.env` 使用 **`aippt.settings`**（`read_llm_settings` / `write_llm_settings`）。生产环境请设置 `FLASK_SECRET_KEY`。
+Web 任务级 LLM 后端从上传表单写入 `meta.json`，不再提供页面内修改 `.env` 的入口。生产环境请设置 `FLASK_SECRET_KEY`。
 
 ---
 
@@ -279,7 +279,6 @@ from aippt.domain import DeckOutline
 from aippt.services.outline import invoke_outline_chain, cap_outline_pages
 from aippt.services import deck_jobs
 from aippt.io import load_document_text
-from aippt.settings import read_llm_settings, write_llm_settings
 from aippt.export.html_to_ppt_tools import run_html_to_ppt, HtmlToPptCliOptions
 from aippt.export.merge_pptx import merge_pptx_files
 ```
