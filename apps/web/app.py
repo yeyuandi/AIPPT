@@ -35,7 +35,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     if test_config:
         app.config.update(test_config)
 
-    from web.wizard import bp as wizard_bp
+    from .wizard import bp as wizard_bp
 
     app.register_blueprint(wizard_bp)
 
