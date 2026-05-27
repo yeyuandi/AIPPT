@@ -80,7 +80,7 @@ flowchart LR
 ## Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/aippt.git
+git clone https://github.com/yeyuandi/aippt.git
 cd aippt
 
 python -m venv .venv
@@ -224,7 +224,6 @@ pytest tests/unit
 
 本项目采用 **[MIT License](LICENSE)**（Copyright © 2026 aippt contributors）。
 
-若你希望署名改为个人或组织名称，可直接编辑 `LICENSE` 第一行版权行。
 
 ---
 
