@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PPTAgent演示文档智能体 · aippt</title>
+    <link rel="preconnect" href="https://fonts.loli.net" />
+    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin />
+    <link
+      href="https://fonts.loli.net/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.8/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.bootcdn.net/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/wizard.css') }}" />
+  </head>
+  <body class="wizard-body">
+    <a class="visually-hidden-focusable btn btn-sm btn-outline-light position-absolute m-2" href="#wizard-main"
+      >跳到主要内容</a
+    >
+    <header class="border-bottom border-secondary border-opacity-25 py-4 mb-3">
+      <div class="container d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <p class="wizard-brand mb-1">Neural Deck Pipeline</p>
+          <h1 class="wizard-title h3 mb-0">PPTAgent演示文档智能体</h1>
+        </div>
+        <button
+          type="button"
+          id="btn-llm-settings"
+          class="btn btn-wiz-outline btn-sm text-nowrap"
+          data-bs-toggle="modal"
+          data-bs-target="#llm-settings-modal"
+          aria-label="打开模型参数配置"
+        >
+          <i class="bi bi-sliders" aria-hidden="true"></i> 模型配置
+        </button>
+      </div>
+    </header>
+
+    <nav class="container mb-4" aria-label="向导步骤">
+      <ul class="nav wizard-step-nav flex-wrap gap-2 justify-content-center">
+        <li class="nav-item">
+          <span class="nav-link active" data-step-indicator="1">1 加载文档内容</span>
+        </li>
+        <li class="nav-item">
+          <span class="nav-link" data-step-indicator="2">2 推理文档大纲</span>
+        </li>
+        <li class="nav-item">
+          <span class="nav-link" data-step-indicator="3">3 设计文档模版</span>
+        </li>
+        <li class="nav-item">
+          <span class="nav-link" data-step-indicator="4">4 设计文档页面</span>
+        </li>
+        <li class="nav-item">
+          <span class="nav-link" data-step-indicator="5">5 导出PPT格式</span>
+        </li>
+        <li class="nav-item">
+          <span class="nav-link" data-step-indicator="6">6 合并PPT文件</span>
+        </li>
+      </ul>
+    </nav>
+
+    <main id="wizard-main" class="container pb-5">
+      <div id="alert-host" class="mb-3" aria-live="polite"></div>
+
+      <!-- 1 加载文档内容 -->
+      <section class="wizard-card p-4 mb-4" data-wizard-pane="1" aria-labelledby="heading-a">
+        <h2 id="heading-a" class="h5 mb-3">1 · 加载文档内容</h2>
+        <p class="text-secondary small mb-3">
+          可在下方输入正文，或使用回形针附加 <strong>.txt</strong> / <strong>.md</strong> / <strong>.docx</strong>（解析与 CLI
+          <code>load_document_text</code> 一致）。二者可同时提供：文件解析结果在前，输入框内容在后合并。
+        </p>
+        <div class="mb-3 pb-3 border-bottom border-secondary border-opacity-25">
+          <label class="form-label mb-1" for="history-job-select">载入历史任务</label>
+          <div class="d-flex flex-wrap align-items-stretch gap-2">
+            <select id="history-job-select" class="form-select" style="max-width: min(100%, 32rem)">
+              <option value="">请选择历史 job…</option>
+            </select>
+            <button type="button" id="btn-history-job-refresh" class="btn btn-wiz-outline text-nowrap">刷新列表</button>
+          </div>
+          <p class="small text-secondary mb-0 mt-2">
+            从本机 <code>output_run/web_jobs</code> 读取已有任务，恢复正文、LLM 后端、页数设置、风格词与各步预览状态（不恢复本地未上传的附件）。
+          </p>
+        </div>
+        <form id="form-upload" enctype="multipart/form-data">
+          <input
+            type="file"
+            id="file"
+            name="file"
+            hidden
+            accept=".txt,.md,.docx,.TXT,.MD,.DOCX,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
+          />
+          <div class="step1-composer mb-3">
+            <label class="visually-hidden" for="document-text">文档正文</label>
+            <textarea
+              class="step1-composer-input form-control"
+              id="document-text"
+              name="document_text"
+              rows="7"
+              placeholder="在此粘贴或输入正文；也可仅上传文件。"
+            ></textarea>
+            <div class="step1-composer-footer">
+              <div class="step1-composer-left">
+                <span id="upload-file-status" class="small text-secondary">未附加文件</span>
+              </div>
+              <div class="step1-composer-actions">
+                <button type="button" id="btn-pick-file" class="btn btn-step1-icon" title="附加文稿文件" aria-label="附加文稿文件">
+                  <i class="bi bi-paperclip"></i>
+                </button>
+                <button type="submit" id="btn-upload-submit" class="btn btn-step1-send" title="加载文档内容" aria-label="加载文档内容">
+                  <i class="bi bi-arrow-up"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="step1-action-bar d-flex flex-column gap-2 mt-2">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="button" id="nav-step1-next" class="btn btn-wiz-outline" data-go-step="2">下一步</button>
+              </div>
+              <div class="d-flex flex-wrap align-items-center gap-2 step1-llm-cluster">
+              <label class="form-label mb-0 small text-secondary text-nowrap" for="llm-provider">LLM 后端</label>
+              <select class="form-select form-select-sm step1-llm-select" id="llm-provider" name="llm_provider">
+                <option value="">默认（读环境变量）</option>
+                <option value="ollama">ollama</option>
+                <option value="deepseek">deepseek</option>
+              </select>
+              </div>
+            </div>
+            <p class="small text-secondary mb-0">
+              未上传文件时正文至少 5 个字；上传或附加文件后可仅依赖文件。<br />
+              输入正文或附加文件后可点「下一步」（将自动提交加载）；也可先点此发送按钮加载。
+            </p>
+          </div>
+        </form>
+        <article class="mt-4" aria-label="正文预览">
+          <p id="upload-meta" class="small text-secondary mb-2"></p>
+          <pre id="doc-preview" class="outline-pre mb-0" tabindex="0"></pre>
+        </article>
+      </section>
+
+      <!-- 2 推理文档大纲 -->
+      <section class="wizard-card p-4 mb-4" data-wizard-pane="2" hidden aria-labelledby="heading-b">
+        <h2 id="heading-b" class="h5 mb-3">2 · 推理文档大纲</h2>
+        <p class="text-secondary small mb-3">
+          PPT最多页数限制与 LLM规划PPT页面数量在此填写（留空则由模型自拟页数）；与 CLI <code>--max-slides</code> / <code>--target-slides</code> 一致。
+        </p>
+        <div class="row g-3 mb-3 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label" for="max-slides">PPT最多页数限制</label>
+            <input class="form-control" type="number" id="max-slides" min="1" placeholder="可选" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="target-slides">LLM规划PPT页面数量</label>
+            <input class="form-control" type="number" id="target-slides" min="1" placeholder="可选" />
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="d-flex flex-column align-items-start align-items-md-end gap-2 ms-md-auto">
+              <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                <button type="button" id="btn-outline" class="btn btn-wiz-primary">推理文档大纲</button>
+                <button type="button" id="nav-step2-prev" class="btn btn-wiz-outline" data-go-step="1">上一步</button>
+                <button type="button" id="nav-step2-next" class="btn btn-wiz-outline" data-go-step="3">下一步</button>
+              </div>
+              <p id="outline-meta" class="small text-info mb-0 text-start text-md-end w-100"></p>
+            </div>
+          </div>
+        </div>
+        <div class="row g-3 mt-2 align-items-start">
+          <div class="col-md-4">
+            <p id="outline-editor-list-hint" class="small text-secondary mb-2">
+              暂无大纲，请先点击上方「推理文档大纲」。
+            </p>
+            <h3 id="outline-editor-heading" class="h6 text-secondary mb-2 d-none">结构化大纲（<code>deck_outline.json</code>）</h3>
+            <div
+              id="outline-editor-list"
+              class="outline-editor-list d-none"
+              role="listbox"
+              aria-label="结构化大纲页面列表"
+            ></div>
+          </div>
+          <div class="col-md-8">
+            <div id="outline-editor-form-placeholder" class="small text-secondary mb-0">
+              生成大纲后，在左侧选择一页，即可编辑标题、概要及要点。
+            </div>
+            <div id="outline-editor-form-wrap" class="d-none">
+              <div class="mb-3">
+                <label class="form-label" for="outline-slide-title">标题（title）</label>
+                <input type="text" class="form-control" id="outline-slide-title" autocomplete="off" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="outline-slide-summary">概要（summary）</label>
+                <textarea class="form-control" id="outline-slide-summary" rows="4" spellcheck="false"></textarea>
+              </div>
+              <div class="mb-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                  <label class="form-label mb-0">要点（bullets）</label>
+                  <button type="button" id="outline-bullet-add" class="btn btn-sm btn-wiz-outline">添加要点</button>
+                </div>
+                <div id="outline-bullets-host"></div>
+              </div>
+              <div class="d-flex justify-content-center mt-1">
+                <button type="button" id="outline-save-disk" class="btn btn-wiz-primary">更新大纲内容</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3 设计文档模版 -->
+      <section class="wizard-card p-4 mb-4" data-wizard-pane="3" hidden aria-labelledby="heading-c">
+        <h2 id="heading-c" class="h5 mb-3">3 · 设计文档模版</h2>
+
+        <div class="row g-3 align-items-start">
+          <div class="col-md-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+              <p class="form-label mb-0" id="template-style-column-label">风格描述 · 提示词</p>
+              <button type="button" class="btn btn-link btn-sm p-0 wizard-style-preset-trigger" id="btn-html-style-prompt-picker">
+                提示词选择
+              </button>
+            </div>
+            <textarea
+              class="form-control template-style-textarea"
+              id="html-style"
+              rows="14"
+              aria-labelledby="template-style-column-label"
+              placeholder="例：庄重端正，红蓝白经典配色，版面规整、信息层级清晰"
+            ></textarea>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              <button type="button" id="btn-template" class="btn btn-wiz-primary">设计文档模版</button>
+              <button type="button" id="nav-step3-prev" class="btn btn-wiz-outline" data-go-step="2">上一步</button>
+              <button type="button" id="nav-step3-next" class="btn btn-wiz-outline" data-go-step="4">下一步</button>
+            </div>
+            <p id="template-meta" class="small text-info mt-3 mb-0"></p>
+          </div>
+          <div class="col-md-8">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+              <p class="small text-secondary mb-0">文档模板预览</p>
+              <div class="d-flex flex-wrap gap-2">
+                <button type="button" id="btn-template-preview-fs-open" class="btn btn-sm btn-wiz-outline" disabled>
+                  全屏展示
+                </button>
+                <button type="button" id="btn-template-preview-fs-close" class="btn btn-sm btn-wiz-outline d-none">
+                  关闭全屏
+                </button>
+              </div>
+            </div>
+            <div id="template-preview-placeholder" class="template-preview-empty">暂时没有预览的内容</div>
+            <iframe
+              id="iframe-template"
+              class="preview-frame d-none"
+              title="文档模板预览"
+              sandbox="allow-same-origin"
+            ></iframe>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4 设计文档页面 -->
+      <section class="wizard-card p-4 mb-4" data-wizard-pane="4" hidden aria-labelledby="heading-d">
+        <h2 id="heading-d" class="h5 mb-3">4 · 设计文档页面</h2>
+        <p class="text-secondary small">
+          后台线程按大纲顺序调用封面 / 目录 / 正文链路与 CLI 相同；进度来自 <code>progress.json</code> 轮询。
+          「页面列表」在进入本步时会请求 <code>GET /api/jobs/&lt;id&gt;/outline-json</code>（即磁盘上的 <code>deck_outline.json</code>）；生成完成后可点击条目预览对应页 HTML。
+        </p>
+        <button type="button" id="btn-slides-start" class="btn btn-wiz-primary">设计文档页面</button>
+        <button type="button" id="nav-step4-prev" class="btn btn-wiz-outline ms-2" data-go-step="3">上一步</button>
+        <button type="button" id="nav-step4-next" class="btn btn-wiz-outline ms-2" data-go-step="5">下一步</button>
+        <div class="mt-3 mb-2">
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+            <div id="slides-progress-bar" class="progress-bar" style="width: 0%" aria-valuenow="0"></div>
+          </div>
+          <p id="slides-progress-label" class="small text-secondary mt-2 mb-0"></p>
+        </div>
+        <div class="row g-3 mt-2">
+          <div class="col-md-4">
+            <p class="form-label mb-2" id="slide-picker-label">选择页面（来自 deck_outline.json）</p>
+            <div
+              id="slide-picker-list"
+              class="slide-picker-list"
+              role="listbox"
+              aria-labelledby="slide-picker-label"
+            ></div>
+          </div>
+          <div class="col-md-8">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+              <p class="small text-secondary mb-0">单页 预览</p>
+              <button
+                type="button"
+                id="btn-slide-html-edit"
+                class="btn btn-sm btn-wiz-outline"
+                disabled
+                aria-label="编辑当前页 HTML 源码"
+              >
+                编辑
+              </button>
+            </div>
+            <div id="slide-preview-placeholder" class="slide-preview-empty">暂无相关页面</div>
+            <iframe
+              id="iframe-slide"
+              class="preview-frame d-none"
+              title="单页预览"
+              sandbox="allow-same-origin"
+            ></iframe>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5 导出PPT格式 -->
+      <section class="wizard-card p-4 mb-4" data-wizard-pane="5" hidden aria-labelledby="heading-e">
+        <h2 id="heading-e" class="h5 mb-3">5 · 导出PPT格式</h2>
+        <p class="text-secondary small">
+          截图 DPR 与 CLI <code>HtmlToPptCliOptions.raster_dpr</code> 一致（倍率越高截图越清晰、耗时与体积越大）；合并文件名含时间戳。可选在任务目录额外写入与单页
+          pptx 同名的 PNG，便于质检。
+        </p>
+        <div class="row g-3 mb-3">
+          <div class="col-md-3">
+            <label class="form-label" for="raster-dpr">截图 DPR</label>
+            <input class="form-control" type="number" id="raster-dpr" value="10" min="1" step="0.5" />
+          </div>
+          <div class="col-md-9 d-flex align-items-end">
+            <div class="form-check mb-0">
+              <input class="form-check-input" type="checkbox" id="save-slide-png" />
+              <label class="form-check-label small" for="save-slide-png">
+                额外保存每页截图 PNG（任务目录下 <code>slide_NNN.png</code>，与嵌入 pptx 的栅格一致）
+              </label>
+            </div>
+          </div>
+        </div>
+        <button type="button" id="btn-export-pptx" class="btn btn-wiz-primary" title="可重复导出以更换 DPR、PNG 选项或覆盖合并稿">
+          导出PPT格式
+        </button>
+        <button type="button" id="nav-step5-prev" class="btn btn-wiz-outline ms-2" data-go-step="4">上一步</button>
+        <button type="button" id="nav-step5-next" class="btn btn-wiz-outline ms-2" data-go-step="6">下一步</button>
+        <div class="mt-3 mb-2">
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+            <div id="pptx-progress-bar" class="progress-bar" style="width: 0%" aria-valuenow="0"></div>
+          </div>
+          <p id="pptx-progress-label" class="small text-secondary mt-2 mb-0"></p>
+        </div>
+      </section>
+
+      <!-- 6 合并PPT文件 -->
+      <section class="wizard-card p-4 mb-5" data-wizard-pane="6" hidden aria-labelledby="heading-f">
+        <h2 id="heading-f" class="h5 mb-3">6 · 合并PPT文件</h2>
+        <div class="output-banner mb-3">
+          <p id="final-meta" class="text-secondary small mb-3"></p>
+          <a id="download-merged" class="btn btn-wiz-primary disabled" href="#" download>下载合并PPT文件</a>
+          <button type="button" id="nav-step6-prev" class="btn btn-wiz-outline ms-2" data-go-step="5">上一步</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- 步骤 2：大纲保存校验（标题 / 概要必填） -->
+    <div class="modal fade" id="outline-validation-modal" tabindex="-1" aria-labelledby="outline-validation-modal-label" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content wizard-modal">
+          <div class="modal-header border-secondary border-opacity-25">
+            <h5 class="modal-title" id="outline-validation-modal-label">无法保存大纲</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-secondary mb-2">每一页的<strong>标题</strong>与<strong>概要</strong>均须填写后再保存。请补全以下页面：</p>
+            <ul id="outline-validation-modal-list" class="small mb-0 ps-3"></ul>
+          </div>
+          <div class="modal-footer border-secondary border-opacity-25">
+            <button type="button" class="btn btn-wiz-primary" data-bs-dismiss="modal">知道了</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 短时居中提示（静态遮罩、自动关闭） -->
+    <div
+      class="modal fade"
+      id="wizard-transient-modal"
+      tabindex="-1"
+      role="dialog"
+      aria-modal="true"
+      aria-label="操作结果"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content wizard-modal wizard-transient-modal-content shadow">
+          <div class="modal-body text-center py-4 px-3">
+            <p class="mb-0 text-white small fw-semibold" id="wizard-transient-modal-msg"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 2：推理大纲弹窗（静态遮罩，禁止点击背景关闭） -->
+    <div
+      class="modal fade"
+      id="outline-run-modal"
+      tabindex="-1"
+      aria-labelledby="outline-run-modal-label"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content wizard-modal">
+          <div class="modal-header border-secondary border-opacity-25">
+            <h5 class="modal-title" id="outline-run-modal-label">推理文档大纲</h5>
+            <button type="button" class="btn-close" id="outline-modal-header-close" aria-label="关闭"></button>
+          </div>
+          <div class="modal-body">
+            <div id="outline-modal-running">
+              <p class="small text-secondary mb-3">
+                正在调用 LLM 推理大纲。进度条为示意进度；可点「关闭窗口」仅隐藏对话框（请求仍会继续），或点「暂停推理」终止本次请求。
+              </p>
+              <div class="progress mb-2" style="height: 0.65rem">
+                <div
+                  id="outline-modal-progress-bar"
+                  class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
+                  role="progressbar"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="0"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+            <div id="outline-modal-result" class="d-none">
+              <p id="outline-modal-result-msg" class="small mb-0"></p>
+            </div>
+          </div>
+          <div class="modal-footer border-secondary border-opacity-25 d-flex flex-wrap gap-2 justify-content-end">
+            <button type="button" class="btn btn-wiz-outline d-none" id="outline-modal-btn-running-close">关闭窗口</button>
+            <button type="button" class="btn btn-wiz-outline d-none" id="outline-modal-btn-pause">暂停推理</button>
+            <button type="button" class="btn btn-wiz-outline d-none" id="outline-modal-btn-close">关闭</button>
+            <button type="button" class="btn btn-wiz-primary d-none" id="outline-modal-btn-retry">再次推理</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 1：加载文档进度弹窗（完成后自动关闭；失败需点关闭） -->
+    <div
+      class="modal fade"
+      id="upload-run-modal"
+      tabindex="-1"
+      aria-labelledby="upload-run-modal-label"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content wizard-modal">
+          <div class="modal-header border-secondary border-opacity-25">
+            <h5 class="modal-title" id="upload-run-modal-label">加载文档内容</h5>
+          </div>
+          <div class="modal-body">
+            <div id="upload-modal-phase-loading">
+              <p class="small text-secondary mb-3" id="upload-modal-status-line">正在处理，请稍候…</p>
+              <div class="progress mb-2" style="height: 0.65rem">
+                <div id="upload-modal-progress-bar" class="progress-bar bg-primary" style="width: 0%"></div>
+              </div>
+              <p id="upload-modal-progress-label" class="small text-secondary mb-0"></p>
+            </div>
+            <div id="upload-modal-phase-success" class="d-none text-success small fw-semibold py-2">加载完成</div>
+            <div id="upload-modal-phase-error" class="d-none">
+              <p class="small text-danger mb-3" id="upload-modal-error-msg"></p>
+              <button type="button" class="btn btn-wiz-outline" id="upload-modal-btn-dismiss">关闭</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 4：编辑单页 HTML -->
+    <div
+      class="modal fade"
+      id="slide-html-edit-modal"
+      tabindex="-1"
+      aria-labelledby="slide-html-edit-modal-label"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl modal-dialog-centered slide-html-edit-modal-dialog">
+        <div class="modal-content wizard-modal slide-html-edit-modal-content">
+          <div class="modal-header border-secondary border-opacity-25 flex-shrink-0">
+            <h5 class="modal-title" id="slide-html-edit-modal-label">
+              编辑单页 HTML · <span id="slide-html-edit-modal-filename"></span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+          </div>
+          <div class="modal-body slide-html-edit-modal-body">
+            <label class="form-label small text-secondary mb-2 flex-shrink-0" for="slide-html-edit-textarea">
+              源码（保存后直接写入任务目录对应文件）
+            </label>
+            <textarea
+              id="slide-html-edit-textarea"
+              class="form-control slide-html-edit-textarea font-monospace"
+              rows="12"
+              spellcheck="false"
+              autocomplete="off"
+            ></textarea>
+          </div>
+          <div class="modal-footer border-secondary border-opacity-25 flex-shrink-0">
+            <button type="button" class="btn btn-wiz-outline" data-bs-dismiss="modal">取消</button>
+            <button type="button" class="btn btn-wiz-primary" id="btn-slide-html-edit-save">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 3：风格提示词预设（按行业） -->
+    <div class="modal fade" id="html-style-preset-modal" tabindex="-1" aria-labelledby="html-style-preset-modal-label" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
+        <div class="modal-content wizard-modal">
+          <div class="modal-header border-secondary border-opacity-25">
+            <h5 class="modal-title" id="html-style-preset-modal-label">提示词选择</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+          </div>
+          <div class="modal-body pt-2">
+            <p class="small text-secondary mb-3">按行业选择一套风格描述；点击后填入输入框并关闭本窗口。</p>
+            <div id="html-style-preset-groups"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 3：生成模版弹窗（静态遮罩） -->
+    <div
+      class="modal fade"
+      id="template-run-modal"
+      tabindex="-1"
+      aria-labelledby="template-run-modal-label"
+      aria-hidden="true"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content wizard-modal">
+          <div class="modal-header border-secondary border-opacity-25">
+            <h5 class="modal-title" id="template-run-modal-label">设计文档模版</h5>
+            <button
+              type="button"
+              class="btn-close"
+              id="template-modal-header-close"
+              aria-label="关闭"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div id="template-modal-running">
+              <p class="small text-secondary mb-3">
+                正在调用模型生成 deck 模板 HTML。进度条为示意进度；你可随时点右上角关闭隐藏本窗口，请求仍会在后台继续。
+              </p>
+              <div class="progress mb-2" style="height: 0.65rem">
+                <div
+                  id="template-modal-progress-bar"
+                  class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
+                  role="progressbar"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="0"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+            <div id="template-modal-result" class="d-none">
+              <p id="template-modal-result-msg" class="small mb-0"></p>
+            </div>
+          </div>
+          <div class="modal-footer border-secondary border-opacity-25">
+            <button type="button" class="btn btn-wiz-outline d-none" id="template-modal-btn-close">关闭</button>
+            <button type="button" class="btn btn-wiz-primary d-none" id="template-modal-btn-retry">再次设计</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 模型参数配置（写入仓库根 .env） -->
+    <div
+      class="modal fade"
+      id="llm-settings-modal"
+      tabindex="-1"
+      aria-labelledby="llm-settings-modal-title"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content wizard-modal border-secondary border-opacity-25">
+          <div class="modal-header border-secondary border-opacity-25">
+            <h2 class="modal-title h5" id="llm-settings-modal-title">模型参数配置</h2>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="关闭"></button>
+          </div>
+          <form id="form-llm-settings">
+            <div class="modal-body">
+              <p class="small text-secondary mb-3">
+                配置保存在 <code id="llm-settings-env-path">.env</code>；保存后立即生效于本服务进程。
+              </p>
+              <div id="llm-settings-auth-hint" class="alert alert-warning d-none small" role="status"></div>
+
+              <!-- 查看模式 -->
+              <div id="llm-settings-view">
+                <dl class="row small mb-0 llm-settings-view-dl" id="llm-settings-view-dl"></dl>
+              </div>
+
+              <!-- 编辑模式 -->
+              <div id="llm-settings-edit" class="d-none" aria-hidden="true">
+              <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                  <label class="form-label" for="env-llm-provider">LLM 后端</label>
+                  <select class="form-select" id="env-llm-provider" name="LLM_PROVIDER">
+                    <option value="ollama">ollama</option>
+                    <option value="deepseek">deepseek</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="env-llm-temperature">温度</label>
+                  <input
+                    class="form-control"
+                    type="number"
+                    id="env-llm-temperature"
+                    name="LLM_TEMPERATURE"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    placeholder="0.3"
+                  />
+                </div>
+              </div>
+              <fieldset id="env-panel-ollama" class="border border-secondary border-opacity-25 rounded p-3 mb-3">
+                <legend class="float-none w-auto px-2 small text-secondary mb-0">Ollama</legend>
+                <div class="row g-3 mt-1">
+                  <div class="col-12">
+                    <label class="form-label" for="env-ollama-api-key">OLLAMA_API_KEY</label>
+                    <input class="form-control font-monospace" type="password" id="env-ollama-api-key" name="OLLAMA_API_KEY" autocomplete="off" />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label" for="env-ollama-base-url">OLLAMA_BASE_URL</label>
+                    <input class="form-control" type="url" id="env-ollama-base-url" name="OLLAMA_BASE_URL" placeholder="https://ollama.com" />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label" for="env-ollama-model">OLLAMA_MODEL</label>
+                    <input class="form-control" type="text" id="env-ollama-model" name="OLLAMA_MODEL" placeholder="gpt-oss:120b" />
+                  </div>
+                </div>
+              </fieldset>
+              <fieldset id="env-panel-deepseek" class="border border-secondary border-opacity-25 rounded p-3">
+                <legend class="float-none w-auto px-2 small text-secondary mb-0">DeepSeek</legend>
+                <div class="row g-3 mt-1">
+                  <div class="col-12">
+                    <label class="form-label" for="env-deepseek-api-key">DEEPSEEK_API_KEY</label>
+                    <input class="form-control font-monospace" type="password" id="env-deepseek-api-key" name="DEEPSEEK_API_KEY" autocomplete="off" />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label" for="env-deepseek-api-base">DEEPSEEK_API_BASE</label>
+                    <input class="form-control" type="url" id="env-deepseek-api-base" name="DEEPSEEK_API_BASE" placeholder="https://api.deepseek.com/v1" />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label" for="env-deepseek-model">DEEPSEEK_MODEL</label>
+                    <input class="form-control" type="text" id="env-deepseek-model" name="DEEPSEEK_MODEL" placeholder="deepseek-chat" />
+                  </div>
+                </div>
+              </fieldset>
+              </div>
+            </div>
+            <div class="modal-footer border-secondary border-opacity-25">
+              <div id="llm-settings-footer-view" class="d-flex w-100 justify-content-end gap-2 llm-settings-footer-actions">
+                <button type="button" class="btn btn-wiz-outline" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-wiz-primary" id="btn-llm-settings-edit">
+                  <i class="bi bi-pencil-square" aria-hidden="true"></i> 修改
+                </button>
+              </div>
+              <div id="llm-settings-footer-edit" class="d-none w-100 justify-content-end gap-2 llm-settings-footer-actions" hidden>
+                <button type="button" class="btn btn-wiz-outline" id="btn-llm-settings-cancel-edit">取消修改</button>
+                <button type="submit" class="btn btn-wiz-primary" id="btn-llm-settings-save">保存到 .env</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- 文档模板预览全屏层 -->
+    <div
+      id="template-preview-fullscreen-overlay"
+      class="template-fs-overlay d-none"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-label="文档模板全屏预览"
+    >
+      <div class="template-fs-toolbar">
+        <button type="button" id="btn-template-fs-exit" class="btn btn-sm btn-wiz-outline">关闭全屏</button>
+      </div>
+      <iframe
+        id="iframe-template-fullscreen"
+        class="template-fs-iframe"
+        title="文档模板预览（全屏）"
+        sandbox="allow-same-origin"
+      ></iframe>
+    </div>
+
+    <footer class="border-top border-secondary border-opacity-25 py-4 mt-auto">
+      <div class="container small text-secondary">
+        <p class="mb-0">
+          本地产物目录：<code>output_run/web_jobs/&lt;job_id&gt;/</code> · 需要可用 LLM 密钥与 Playwright Chromium。
+        </p>
+      </div>
+    </footer>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/wizard.js') }}" defer></script>
+  </body>
+</html>

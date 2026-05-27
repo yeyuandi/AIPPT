@@ -1,0 +1,15 @@
+# 密钥与本地环境（勿提交）
+.env
+aippt/.env
+
+# 生成物与缓存
+output_run/
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
